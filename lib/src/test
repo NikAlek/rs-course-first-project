@@ -1,0 +1,112 @@
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_tx() -> TxData {
+        TxData {
+            tx_id: 1001,
+            tx_type: TxType::Deposit,
+            from_user_id: 0,
+            to_user_id: 501,
+            amount: 50000,
+            timestamp: 1672531200000,
+            status: Status::Success,
+            description: "Initial account funding".to_string(),
+        }
+    }
+
+    #[test]
+    fn test_bin_roundtrip() {
+        let tx = sample_tx();
+        let bin_data = tx.to_bin().unwrap();
+        let parsed = TxData::from_bin(&bin_data[8..]).unwrap(); // пропускаем MAGIC + RECORD_SIZE
+        assert_eq!(tx, parsed);
+    }
+
+    #[test]
+    fn test_bin_stream_roundtrip() {
+        let txs = vec![sample_tx(), sample_tx()];
+        let bin_data = TxData::to_bin_all(&txs).unwrap();
+        let parsed = TxData::from_bin_reader(&mut bin_data.as_slice()).unwrap();
+        assert_eq!(txs, parsed);
+    }
+
+    #[test]
+    fn test_csv_roundtrip() {
+        let tx = sample_tx();
+        let csv_line = tx.to_csv_line().unwrap();
+        let parsed = TxData::from_csv_line(&csv_line).unwrap();
+        assert_eq!(tx, parsed);
+    }
+
+    #[test]
+    fn test_csv_full_roundtrip() {
+        let txs = vec![sample_tx(), sample_tx()];
+        let csv_data = TxData::to_csv_all(&txs).unwrap();
+        let parsed = TxData::from_csv_lines(&csv_data.lines().map(|s| s.to_string()).collect::<Vec<_>>()).unwrap();
+        assert_eq!(txs, parsed);
+    }
+
+    #[test]
+    fn test_text_roundtrip() {
+        let tx = sample_tx();
+        let text_block = tx.to_text_block().unwrap();
+        let lines: Vec<String> = text_block.lines().map(|s| s.to_string()).collect();
+        let mut fields = HashMap::new();
+        for line in &lines {
+            if let Some(pos) = line.find(':') {
+                let key = line[..pos].trim().to_string();
+                let value = line[pos + 1..].trim().to_string();
+                fields.insert(key, value);
+            }
+        }
+        let parsed = TxData::from_text_fields(&fields).unwrap();
+        assert_eq!(tx, parsed);
+    }
+
+    #[test]
+    fn test_text_full_roundtrip() {
+        let txs = vec![sample_tx(), sample_tx()];
+        let text_data = TxData::to_text_all(&txs).unwrap();
+        let parsed = TxData::from_text_lines(&text_data.lines().map(|s| s.to_string()).collect::<Vec<_>>()).unwrap();
+        assert_eq!(txs, parsed);
+    }
+
+    #[test]
+    fn test_write_to_bin() {
+        let tx = sample_tx();
+        let mut buf = Vec::new();
+        tx.write_to_bin(&mut buf).unwrap();
+        let parsed = TxData::from_bin(&buf[8..]).unwrap();
+        assert_eq!(tx, parsed);
+    }
+
+    #[test]
+    fn test_write_to_csv() {
+        let tx = sample_tx();
+        let mut buf = Vec::new();
+        tx.write_to_csv(&mut buf).unwrap();
+        let csv_str = String::from_utf8(buf).unwrap();
+        let parsed = TxData::from_csv_line(&csv_str).unwrap();
+        assert_eq!(tx, parsed);
+    }
+
+    #[test]
+    fn test_write_to_text() {
+        let tx = sample_tx();
+        let mut buf = Vec::new();
+        tx.write_to_text(&mut buf).unwrap();
+        let text_str = String::from_utf8(buf).unwrap();
+        let lines: Vec<String> = text_str.lines().map(|s| s.to_string()).collect();
+        let mut fields = HashMap::new();
+        for line in &lines {
+            if let Some(pos) = line.find(':') {
+                let key = line[..pos].trim().to_string();
+                let value = line[pos + 1..].trim().to_string();
+                fields.insert(key, value);
+            }
+        }
+        let parsed = TxData::from_text_fields(&fields).unwrap();
+        assert_eq!(tx, parsed);
+    }
+}
