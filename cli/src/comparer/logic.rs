@@ -27,27 +27,17 @@ pub fn process_comparer_logic(
     second_from: &Resource,
     second_format: &Format,
 ) -> Result<ComparerLogicResult, CompareLogicErr> {
-    let mut first_resource =
-        read(first_from).map_err(|err| CompareLogicErr::Prepare { err: err })?;
-    let mut second_resource =
-        read(second_from).map_err(|err| CompareLogicErr::Prepare { err: err })?;
+    let first_txn =
+        read(first_from, first_format).map_err(|err| CompareLogicErr::Prepare { err: err })?;
+    let  second_txn =
+        read(second_from, second_format).map_err(|err| CompareLogicErr::Prepare { err: err })?;
 
-    let txn1 = read_from_resource(first_format, first_resource)
-        .map_err(|err| CompareLogicErr::Prepare { err: err })?;
-    let txn2 = read_from_resource(second_format, second_resource)
-        .map_err(|err| CompareLogicErr::Prepare { err: err })?;
 
-    if txn1 == txn2 {
+    if first_txn == second_txn {
         Ok(ComparerLogicResult { result: true })
     } else {
         Ok(ComparerLogicResult { result: false })
     }
 }
 
-fn read_from_resource(format: &Format, resource: Box<dyn Read>) -> Result<Vec<TxData>, ParserErr> {
-    return match format {
-        Format::YpBankBin => TxData::from_bin_reader(resource),
-        Format::YpBankCsv => TxData::from_csv_reader(resource),
-        Format::YpBankText => TxData::from_text_reader(resource),
-    };
-}
+

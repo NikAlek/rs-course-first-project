@@ -4,3 +4,12 @@
 
 ./target/debug/cli compare-command --first-from file:/home/nikalek/rust-course/projects/project_1/test-data/records_example.txt --first-format yp-bank-text --second-from file:/home/nikalek/rust-course/projects/project_1/test-data/records_example.txt --second-format yp-bank-text
 
+
+
+./target/debug/cli read-parse-write-command --from file:/home/nikalek/rust-course/projects/project_1/test-data/records_example.csv --from-format yp-bank-csv --to console --to-format yp-bank-text
+
+
+./target/debug/cli read-parse-write-command --from file:/home/nikalek/rust-course/projects/project_1/test-data/records_example.csv --from-format yp-bank-csv --to console --to-format yp-bank-bin
+
+
+./target/debug/cli read-parse-write-command --from file:/home/nikalek/rust-course/projects/project_1/test-data/records_example.csv --from-format yp-bank-csv --to console --to-format yp-bank-csv
