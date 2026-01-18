@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 lib = { path = "../lib" }
 clap = { version = "4", features = ["derive"] }
+tempfile = "3.24.0"

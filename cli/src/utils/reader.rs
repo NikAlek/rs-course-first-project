@@ -1,7 +1,10 @@
 use lib::model::data::TxData;
+use lib::model::data::Status;
+use lib::model::data::Format;
+use lib::model::data::TxType;
 use lib::{
     console::commands::{Commands, Resource},
-    model::{data::Format, errors::ParserErr},
+    model::{errors::ParserErr},
     parser::{bin_psrser::TxnFromBin, csv_parser::TxnFromCsv, text_parser::TxnFromText},
 };
 use std::fs::File;
@@ -27,3 +30,4 @@ fn read_from_resource(resource: Box<dyn Read>, format: &Format) -> Result<Vec<Tx
         Format::YpBankText => TxData::from_text_reader(resource),
     };
 }
+
