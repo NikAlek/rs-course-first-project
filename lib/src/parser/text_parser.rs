@@ -12,7 +12,7 @@ use crate::model::errors::ParserErr;
 pub trait TxnFromText {
     fn from_text(kv: &HashMap<String, String>) -> Result<TxData, ParserErr>;
     fn from_text_many(lines: &[String]) -> Result<Vec<TxData>, ParserErr>; //стоит ли тут TxData изменить на Self и сделать where ?
-    fn from_text_reader(reader: &mut dyn Read) -> Result<Vec<TxData>, ParserErr>;
+    fn from_text_reader(reader: Box<dyn Read>) -> Result<Vec<TxData>, ParserErr>;
 }
 
 pub trait TxnToText {
@@ -97,7 +97,7 @@ impl TxnFromText for TxData {
         Ok(transactions)
     }
 
-    fn from_text_reader(reader: &mut dyn Read) -> Result<Vec<Self>, ParserErr> {
+    fn from_text_reader(reader: Box<dyn Read>) -> Result<Vec<Self>, ParserErr> {
         let content = std::io::read_to_string(reader)
             .map_err(|e| ParserErr::ParseErr { msg: e.to_string() })?;
         let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();

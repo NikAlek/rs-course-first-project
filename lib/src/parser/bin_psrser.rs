@@ -12,7 +12,7 @@ const BIN_MAGIC: [u8; 4] = *b"YPBN";
 
 pub trait TxnFromBin {
     fn from_bin(body: &[u8]) -> Result<TxData, ParserErr>;
-    fn from_bin_reader(reader: &mut dyn Read) -> Result<Vec<TxData>, ParserErr>;
+    fn from_bin_reader(reader: Box<dyn Read>) -> Result<Vec<TxData>, ParserErr>;
 }
 
 pub trait TxnToBin   {
@@ -98,7 +98,7 @@ impl TxnFromBin for TxData {
         })
     }
 
-    fn from_bin_reader(reader: &mut dyn Read) -> Result<Vec<Self>, ParserErr> {
+    fn from_bin_reader(mut reader: Box<dyn Read>) -> Result<Vec<Self>, ParserErr> {
         let mut transactions = Vec::new();
         let mut buf = Vec::new();
 

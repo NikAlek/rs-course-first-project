@@ -24,7 +24,7 @@ const CSV_HEADER_LINE: &str =
 pub trait TxnFromCsv {
     fn from_csv(csv_line: &str) -> Result<TxData, ParserErr>;
     fn from_csv_many(csv_lines: &[String]) -> Result<Vec<TxData>, ParserErr>;
-    fn from_csv_reader(reader: &mut dyn Read) -> Result<Vec<TxData>, ParserErr>;
+    fn from_csv_reader(reader: Box<dyn Read>) -> Result<Vec<TxData>, ParserErr>;
 }
 
 pub trait TxnToCsv {
@@ -88,7 +88,7 @@ impl TxnFromCsv for TxData {
         Ok(transactions)
     }
 
-    fn from_csv_reader(reader: &mut dyn Read) -> Result<Vec<TxData>, ParserErr> {
+    fn from_csv_reader(reader: Box<dyn Read>) -> Result<Vec<TxData>, ParserErr> {
         let mut rdr = ReaderBuilder::new()
             .has_headers(true)
             .delimiter(b',')

@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum CommonErr {
     #[error("io error")]
     IO(#[from] IoErr),
@@ -13,7 +13,7 @@ pub enum CommonErr {
 }
 
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum IoErr {
     #[error("io -> input error")]
     InputErr,
@@ -21,7 +21,7 @@ pub enum IoErr {
     OutputErr,
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Clone)]
 pub enum ParserErr {
     #[error("parser -> global error")]
     ParseErr{ msg: String },
