@@ -488,7 +488,6 @@ DESCRIPTION: "Cash out""#;
         };
 
         let text = tx.to_text().unwrap();
-        println!("{:?}", text);
         assert!(text.contains(r#"DESCRIPTION: "Amount: "10", note: with"#));
         assert!(text.contains("newlines and\ttabs"));
     }
