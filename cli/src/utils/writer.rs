@@ -55,7 +55,8 @@ pub fn write_to_resource(
         }
     };
 
-    output.write_all(&data_to_write);
+    output.write_all(&data_to_write)
+      .map_err(|e| ParserErr::ParseErr { msg: e.to_string() })?;
 
     output
         .flush()
