@@ -1,12 +1,11 @@
 use core::error;
 use std::io::Read;
 
-use crate::utils::reader::{self, read};
 use lib::model::data::TxData;
+use lib::parser::io::reader::read;
 use lib::{
     console::commands::{Commands, Resource},
     model::{data::Format, errors::ParserErr},
-    parser::{bin_psrser::TxnFromBin, csv_parser::TxnFromCsv, text_parser::TxnFromText},
 };
 
 

@@ -1,12 +1,13 @@
-use lib::console::commands::Resource;
-use lib::model::data::Format;
-use lib::model::data::TxData;
-use lib::model::errors::ParserErr;
-use lib::parser::bin_psrser::TxnToBin;
-use lib::parser::csv_parser::TxnToCsv;
-use lib::parser::text_parser::TxnToText;
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Read, Write, stdin, stdout};
+
+use crate::console::commands::Resource;
+use crate::model::data::{Format, TxData};
+use crate::model::errors::ParserErr;
+use crate::parser::concrete::bin_psrser::{TxnFromBin, TxnToBin};
+use crate::parser::concrete::csv_parser::{TxnFromCsv, TxnToCsv};
+use crate::parser::concrete::text_parser::{TxnFromText, TxnToText};
+
 
 fn write(resource: &Resource) -> Result<Box<dyn Write>, ParserErr> {
     match resource {

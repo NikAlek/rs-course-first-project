@@ -41,4 +41,3 @@ fn main() {
 
 pub mod comparer;
 pub mod converter;
-pub mod utils;

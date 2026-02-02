@@ -1,15 +1,13 @@
-use lib::model::data::TxData;
-use lib::model::data::Status;
-use lib::model::data::Format;
-use lib::model::data::TxType;
-use lib::{
-    console::commands::{Commands, Resource},
-    model::{errors::ParserErr},
-    parser::{bin_psrser::TxnFromBin, csv_parser::TxnFromCsv, text_parser::TxnFromText},
-};
 use std::fs::File;
 
 use std::io::{self, BufReader, BufWriter, Read, Write, stdin, stdout};
+
+use crate::console::commands::Resource;
+use crate::model::data::{Format, TxData};
+use crate::model::errors::ParserErr;
+use crate::parser::concrete::bin_psrser::TxnFromBin;
+use crate::parser::concrete::csv_parser::TxnFromCsv;
+use crate::parser::concrete::text_parser::TxnFromText;
 
 pub fn read(resource: &Resource, format: &Format) -> Result<Vec<TxData>, ParserErr> {
     let reader: Box<dyn Read> = match resource {
