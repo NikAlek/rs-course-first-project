@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{self, BufReader, BufWriter, Read, Write, stdin, stdout};
+use std::io::{self, BufReader, BufWriter, Cursor, Read, Write, stdin, stdout};
 
 use crate::console::commands::Resource;
 use crate::model::data::{Format, TxData};
@@ -8,31 +8,23 @@ use crate::parser::concrete::bin_psrser::{TxnFromBin, TxnToBin};
 use crate::parser::concrete::csv_parser::{TxnFromCsv, TxnToCsv};
 use crate::parser::concrete::text_parser::{TxnFromText, TxnToText};
 
-/// Создаёт writer для указанного ресурса.
-///
-/// # Аргументы
-/// * `resource` — целевой ресурс (`Console` или `File`)
-///
-/// # Возвращает
-/// * `Ok(Box<dyn Write>)` — готовый к записи поток
-/// * `Err(ParserErr)` — ошибка создания файла
-///
-fn write(resource: &Resource) -> Result<Box<dyn Write>, ParserErr> {
-    match resource {
-        Resource::Console => Ok(Box::new(stdout())),
-        Resource::File { path } => {
-            let file =
-                File::create(path).map_err(|e| ParserErr::ParseErr { msg: e.to_string() })?;
-            Ok(Box::new(BufWriter::new(file)))
-        }
-    }
-}
 
+/// Записывает коллекцию транзакций в указанный ресурс в заданном формате.
+///
+/// Функция сериализует переданные транзакции в соответствии с выбранным форматом
+/// и выполняет запись во внешний ресурс (например, файл или поток вывода).
+/// После записи гарантируется сброс буфера через вызов `flush()`.
+///
+/// Возвращаемое значение
+///
+/// Возвращает `Ok(usize)` при успешной записи и сбросе буфера. Возвращает размер записанных данных
+/// При возникновении ошибок возвращает ParserErr::ParseErr, содержащий
+/// строковое описание ошибки ввода-вывода или сериализации.
 pub fn write_to_resource(
     txns: &[TxData],
-    resource: &Resource,
-    format: &Format,
-) -> Result<(), ParserErr> {
+    resource: Resource,
+    format: Format,
+) -> Result<usize, ParserErr> {
     let mut output = write(resource)?;
 
     let data_to_write = match format {
@@ -71,131 +63,101 @@ pub fn write_to_resource(
         .flush()
         .map_err(|e| ParserErr::ParseErr { msg: e.to_string() })?;
 
-    Ok(())
+    Ok(data_to_write.len())
+}
+
+
+/// Создаёт Write для указанного ресурса. Write полиморфен и зависит от resource
+///
+/// # Аргументы
+/// * `resource` — целевой ресурс (`Console` или `File`)
+///
+/// # Возвращает
+/// * `Ok(Box<dyn Write>)` — готовый к записи поток
+/// * `Err(ParserErr)` — ошибка создания файла
+///
+fn write(resource: Resource) -> Result<Box<dyn Write>, ParserErr> {
+    match resource {
+        Resource::Console => Ok(Box::new(stdout())),
+        Resource::File { path } => {
+            let file =
+                File::create(path).map_err(|e| ParserErr::ParseErr { msg: e.to_string() })?;
+            Ok(Box::new(BufWriter::new(file)))
+        },
+        Resource::Memory{ data } => {
+            Ok(Box::new(data))
+        }
+    }
 }
 
 
 #[cfg(test)]
 mod tests {
     use crate::model::data::{Status, TxType};
+    use crate::console::commands::Resource;
 
     use super::*;
+    use mockall::automock;
     use std::io::Cursor;
+    use std::sync::{Arc, Mutex};
 
-    #[test]
-    fn test_write_csv_format() {
-        // Arrange: мокаем вывод через Cursor
-        let txns = vec![
-           TxData {
-            tx_id: 42,
-            tx_type: TxType::Withdrawal,
-            from_user_id: 101,
-            to_user_id: 0,
-            amount: 30,
-            timestamp: 1700000010,
-            status: Status::Success,
-            description: "Cash out".to_string(),
-            format: Format::YpBankCsv,
-        },
-           TxData {
-            tx_id: 43,
-            tx_type: TxType::Withdrawal,
-            from_user_id: 101,
-            to_user_id: 0,
-            amount: 30,
-            timestamp: 1700000010,
-            status: Status::Success,
-            description: "Cash out".to_string(),
-            format: Format::YpBankCsv,
-        },
-        ];
-        let mut buffer = Vec::new();
-        let mut mock_writer = Cursor::new(&mut buffer);
 
-        // Act: сериализуем вручную (логика из write_to_resource)
-        let lines: Vec<String> = txns.iter().map(|t| t.to_csv().unwrap()).collect();
-        let content = lines.join("\n");
-        mock_writer.write_all(content.as_bytes()).unwrap();
-        mock_writer.flush().unwrap();
 
-        // Assert
-        let result = String::from_utf8(buffer).unwrap();
-        assert!(result.contains("42"));
-        assert!(result.contains("43"));
-    }
-
-    #[test]
-    fn test_write_bin_format() {
-        // Arrange
-        let txns = vec![
-       TxData {
-            tx_id: 42,
-            tx_type: TxType::Withdrawal,
-            from_user_id: 101,
-            to_user_id: 0,
-            amount: 30,
-            timestamp: 1700000010,
-            status: Status::Success,
-            description: "Cash out".to_string(),
-            format: Format::YpBankCsv,
-        }
-        ];
-        let mut buffer = Vec::new();
-        let mut mock_writer = Cursor::new(&mut buffer);
-
-        // Act: сериализуем бинарные данные
-        let mut bin_data = Vec::new();
-        for txn in &txns {
-            bin_data.extend(txn.to_bin().unwrap());
-        }
-        mock_writer.write_all(&bin_data).unwrap();
-        mock_writer.flush().unwrap();
-
-        // Assert
-        assert!(!buffer.is_empty());
-
-        assert!(buffer.len() > 0);
-    }
-
-    #[test]
-    fn test_write_text_format() {
-        // Arrange
-        let txns = vec![
-           TxData {
-            tx_id: 42,
-            tx_type: TxType::Withdrawal,
-            from_user_id: 101,
-            to_user_id: 0,
-            amount: 30,
-            timestamp: 1700000010,
-            status: Status::Success,
-            description: "Cash out".to_string(),
-            format: Format::YpBankCsv,
-        },
+    fn sample_txns() -> Vec<TxData> {
+        vec![
             TxData {
-            tx_id: 43,
-            tx_type: TxType::Withdrawal,
-            from_user_id: 101,
-            to_user_id: 0,
-            amount: 30,
-            timestamp: 1700000010,
-            status: Status::Success,
-            description: "Cash out".to_string(),
-            format: Format::YpBankCsv,
-        },
-        ];
-        let mut buffer = Vec::new();
-        let mut mock_writer = Cursor::new(&mut buffer);
-
-        // Act: сериализуем в текстовый формат
-        let lines: Vec<String> = txns.iter().map(|t| t.to_text().unwrap()).collect();
-        let content = lines.join("\n");
-        mock_writer.write_all(content.as_bytes()).unwrap();
-        mock_writer.flush().unwrap();
-
-        // Assert
-        let result = String::from_utf8(buffer).unwrap();
-        assert!(result.contains("42"));
-        assert!(result.contains("43"));
+                tx_id: 1,
+                tx_type: TxType::Deposit,
+                from_user_id: 0,
+                to_user_id: 100,
+                amount: 1000,
+                timestamp: 1700000000,
+                status: Status::Success,
+                description: "Initial deposit".to_string(),
+                format: Format::YpBankCsv,
+            },
+            TxData {
+                tx_id: 2,
+                tx_type: TxType::Transfer,
+                from_user_id: 100,
+                to_user_id: 200,
+                amount: 500,
+                timestamp: 1700000060,
+                status: Status::Pending,
+                description: "Friend payment".to_string(),
+                format: Format::YpBankCsv,
+            },
+        ]
     }
+
+       #[test]
+    fn test_ypbank_bin_format() {
+        let txns = sample_txns();
+
+        let size = write_to_resource(&txns, Resource::Memory{data: Cursor::new(vec![])}, Format::YpBankBin)
+            .expect("binary write should succeed");
+
+        assert_eq!(size, 137)
+    }
+
+        #[test]
+    fn test_ypbank_csv_format() {
+        let txns = sample_txns();
+
+        let size = write_to_resource(&txns, Resource::Memory{data: Cursor::new(vec![])}, Format::YpBankCsv)
+            .expect("binary write should succeed");
+
+        assert_eq!(size, 116)
+    }
+
+    #[test]
+    fn test_ypbank_text_format() {
+        let txns = sample_txns();
+
+        let size = write_to_resource(&txns, Resource::Memory{data: Cursor::new(vec![])}, Format::YpBankText)
+            .expect("binary write should succeed");
+
+        assert_eq!(size, 280)
+    }
+    
 }

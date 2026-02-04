@@ -21,10 +21,10 @@ pub enum CompareLogicErr {
 }
 
 pub fn process_comparer_logic(
-    first_from: &Resource,
-    first_format: &Format,
-    second_from: &Resource,
-    second_format: &Format,
+    first_from: Resource,
+    first_format: Format,
+    second_from: Resource,
+    second_format: Format,
 ) -> Result<ComparerLogicResult, CompareLogicErr> {
     let first_txn =
         read(first_from, first_format).map_err(|err| CompareLogicErr::Prepare { err: err })?;

@@ -6,7 +6,7 @@ use lib::console::commands::Commands;
 fn main() {
     let cli = Cli::parse();
 
-    match &cli.command {
+    match cli.command {
         Commands::ReadParseWriteCommand {
             from,
             from_format,
