@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-thiserror = "2.0.17" 
+thiserror = "2" 
 byteorder = "1"
-csv = "1.4.0"
+csv = "1"
 clap = { version = "4", features = ["derive"] }
+mockall = "0.14.0"

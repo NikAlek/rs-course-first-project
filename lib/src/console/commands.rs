@@ -1,6 +1,6 @@
 use crate::model::data::Format;
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use std::{io::Cursor, path::PathBuf, sync::{Arc, Mutex}};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -13,6 +13,7 @@ pub struct Cli {
 pub enum Resource {
     Console,
     File { path: PathBuf },
+    Memory { data: Cursor<Vec<u8>> },
 }
 
 fn parse_resource(s: &str) -> Result<Resource, String> {
